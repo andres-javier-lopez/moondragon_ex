@@ -1,8 +1,13 @@
 <?php
+include "database/conexion.php";
+$mysqli = new mysqli($host, $user, $password, $database);
 
 $nombre = $_POST['nombre'];
 $edad = $_POST['edad'];
 $sexo = $_POST['sexo'];
+
+$sql = "INSERT INTO `usuario` (`nombre`, `edad`, `sexo`) VALUES('$nombre', '$edad', '$sexo');";
+$mysqli->real_query($sql);
 
 ?>
 <!DOCTYPE html>
