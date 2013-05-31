@@ -1,72 +1,24 @@
 <?php
 
-include 'database/conexion.php';
-$mysqli = new mysqli($host, $user, $password, $database);
-$sexo_seleccionado = '';
+include '../moondragon/moondragon.manager.php';
 
-function select_sexo($sexo) {
-	global $sexo_seleccionado;
+class Usuarios extends Manager {
+	protected $mysqli;
+	protected $sexo_seleccionado;
+	protected $mensaje;
 	
-	if($sexo_seleccionado == $sexo) {
-		echo 'selected';
+	public function __construct() {
+		parent::__construct();
+		
+		include 'database/conexion.php';
+		$this->mysqli = new mysqli($host, $user, $password, $database);
+		$this->sexo_seleccionado = '';
+		$this->mensaje = '';
 	}
-}
-
-$task = isset($_REQUEST['task'])?$_REQUEST['task']:'lista';
-
-switch($task) {
 	
-	case 'nuevo':
-		$nombre = '';
-		$edad = '';
-		$sexo_seleccionado = '';
-		$contenido = 'templates/form.php';
-		$task = 'crear';
-		break;
-	case 'edit':
-		$id = $_POST['id'];
-		$sql = 'SELECT `nombre`, `edad`, `sexo` FROM `usuario` WHERE `id` = '.$id.';';
-		$result = $mysqli->query($sql);
-		$row = $result->fetch_object();
-		$nombre = $row->nombre;
-		$edad = $row->edad;
-		$sexo_seleccionado = $row->sexo;
-		$contenido = 'templates/form.php';
-		$task = 'actualizar';
-		break;
-	case 'crear':
-		$nombre = $_POST['nombre'];
-		$edad = $_POST['edad'];
-		$sexo = $_POST['sexo'];
-		
-		$sql = "INSERT INTO `usuario` (`nombre`, `edad`, `sexo`) VALUES('$nombre', '$edad', '$sexo');";
-		$mysqli->real_query($sql);
-		$mensaje = 'Se ha guardado correctamente';
-		$contenido = 'mensaje.php';
-		break;
-	case 'actualizar':
-		$id = $_POST['id'];
-		$nombre = $_POST['nombre'];
-		$edad = $_POST['edad'];
-		$sexo = $_POST['sexo'];
-		
-		$sql = "UPDATE `usuario` SET `nombre` = '$nombre', `edad` = '$edad', `sexo` = '$sexo' WHERE `id` = $id;";
-		$mysqli->real_query($sql);
-		$mensaje = 'Se ha actualizado correctamente';
-		$contenido = 'mensaje.php';
-		break;
-	case 'delete':
-		$id = $_POST['id'];
-		
-		$sql = "DELETE FROM `usuario` WHERE `id` = $id;";
-		$mysqli->real_query($sql);
-		$mensaje = 'Se ha eliminado correctamente';
-		$contenido = 'mensaje.php';
-		break;
-	case 'lista':
-	default:
+	public function index() {
 		$sql = "SELECT * FROM `usuario`";
-		$result = $mysqli->query($sql);
+		$result = $this->mysqli->query($sql);
 		
 		$table = '';
 		while($row = $result->fetch_object()) {
@@ -85,8 +37,77 @@ switch($task) {
 			$delete = '<form action="index.php?task=delete" method="post">'.$id.'<input type="submit" value="Delete" /></form>';
 			$table .= "<tr><td>$row->nombre</td><td>$row->edad</td><td>$sexo</td><td>$update</td><td>$delete</td></tr>";
 		}
-		$contenido = 'templates/lista.php';
-		break;
+		$this->salida('templates/lista.php', array('table' => $table));
+	}
+	
+	public function nuevo() {
+		$vars['id'] = 0;
+		$vars['nombre'] = '';
+		$vars['edad'] = '';
+		$this->sexo_seleccionado = '';
+		$vars['task'] = 'crear';
+		$this->salida('templates/form.php', $vars);
+	}
+	
+	public function edit() {
+		$vars['id'] = $_POST['id'];
+		$sql = 'SELECT `nombre`, `edad`, `sexo` FROM `usuario` WHERE `id` = '.$vars['id'].';';
+		$result = $this->mysqli->query($sql);
+		$row = $result->fetch_object();
+		$vars['nombre'] = $row->nombre;
+		$vars['edad'] = $row->edad;
+		$this->sexo_seleccionado = $row->sexo;
+		$vars['task'] = 'actualizar';
+		$this->salida('templates/form.php', $vars);
+	}
+	
+	public function crear() {
+		$nombre = $_POST['nombre'];
+		$edad = $_POST['edad'];
+		$sexo = $_POST['sexo'];
+		
+		$sql = "INSERT INTO `usuario` (`nombre`, `edad`, `sexo`) VALUES('$nombre', '$edad', '$sexo');";
+		$this->mysqli->real_query($sql);
+
+		$this->mensaje('Se ha guardado correctamente');
+	}
+	
+	public function actualizar() {
+		$id = $_POST['id'];
+		$nombre = $_POST['nombre'];
+		$edad = $_POST['edad'];
+		$sexo = $_POST['sexo'];
+		
+		$sql = "UPDATE `usuario` SET `nombre` = '$nombre', `edad` = '$edad', `sexo` = '$sexo' WHERE `id` = $id;";
+		$this->mysqli->real_query($sql);
+		
+		$this->mensaje('Se ha actualizado correctamente');
+	}
+
+	public function delete() {
+		$id = $_POST['id'];
+		
+		$sql = "DELETE FROM `usuario` WHERE `id` = $id;";
+		$this->mysqli->real_query($sql);
+		
+		$this->mensaje('Se ha eliminado correctamente');
+	}
+	
+	protected function mensaje($mensaje) {
+		$this->mensaje = '<p>'.$mensaje.'</p>';
+		$this->index();
+	}
+	
+	protected function salida($contenido, $vars = array()) {
+		extract($vars);
+		include 'templates/main.php';
+	}
+	
+	protected function select_sexo($sexo) {
+		if($this->sexo_seleccionado == $sexo) {
+			echo 'selected';
+		}
+	}
 }
 
-include 'templates/main.php';
+MoonDragon::run(new Usuarios());

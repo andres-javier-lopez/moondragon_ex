@@ -1,3 +1,4 @@
+<?php echo $this->mensaje ?>
 <h1>Listado de usuarios</h1>
 		<table>
 			<thead>
