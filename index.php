@@ -1,24 +1,24 @@
 <?php
 
 include '../moondragon/moondragon.manager.php';
+include 'modelos/usuario.php';
 
 class Usuarios extends Manager {
-	protected $mysqli;
+	protected $model;
 	protected $sexo_seleccionado;
 	protected $mensaje;
 	
 	public function __construct() {
 		parent::__construct();
 		
-		include 'database/conexion.php';
-		$this->mysqli = new mysqli($host, $user, $password, $database);
+		$this->model = new UsuarioModel();
 		$this->sexo_seleccionado = '';
 		$this->mensaje = '';
 	}
 	
 	public function index() {
-		$sql = "SELECT * FROM `usuario`";
-		$result = $this->mysqli->query($sql);
+		
+		$result = $this->model->listall();
 		
 		$table = '';
 		while($row = $result->fetch_object()) {
@@ -51,9 +51,7 @@ class Usuarios extends Manager {
 	
 	public function edit() {
 		$vars['id'] = $_POST['id'];
-		$sql = 'SELECT `nombre`, `edad`, `sexo` FROM `usuario` WHERE `id` = '.$vars['id'].';';
-		$result = $this->mysqli->query($sql);
-		$row = $result->fetch_object();
+		$row = $this->model->get($vars['id']);
 		$vars['nombre'] = $row->nombre;
 		$vars['edad'] = $row->edad;
 		$this->sexo_seleccionado = $row->sexo;
@@ -66,8 +64,7 @@ class Usuarios extends Manager {
 		$edad = $_POST['edad'];
 		$sexo = $_POST['sexo'];
 		
-		$sql = "INSERT INTO `usuario` (`nombre`, `edad`, `sexo`) VALUES('$nombre', '$edad', '$sexo');";
-		$this->mysqli->real_query($sql);
+		$this->model->insert($nombre, $edad, $sexo);
 
 		$this->mensaje('Se ha guardado correctamente');
 	}
@@ -77,9 +74,8 @@ class Usuarios extends Manager {
 		$nombre = $_POST['nombre'];
 		$edad = $_POST['edad'];
 		$sexo = $_POST['sexo'];
-		
-		$sql = "UPDATE `usuario` SET `nombre` = '$nombre', `edad` = '$edad', `sexo` = '$sexo' WHERE `id` = $id;";
-		$this->mysqli->real_query($sql);
+
+		$this->model->update($id, $nombre, $edad, $sexo);
 		
 		$this->mensaje('Se ha actualizado correctamente');
 	}
@@ -87,8 +83,7 @@ class Usuarios extends Manager {
 	public function delete() {
 		$id = $_POST['id'];
 		
-		$sql = "DELETE FROM `usuario` WHERE `id` = $id;";
-		$this->mysqli->real_query($sql);
+		$this->model->delete($id);
 		
 		$this->mensaje('Se ha eliminado correctamente');
 	}
